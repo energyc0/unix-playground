@@ -20,6 +20,9 @@ static void freelist(struct filenode* root);
 
 static void seek_pattern(FILE* fp);
 
+static int find_substr(const char* str, const char* sub);
+static int* create_offset_table(const char* s);
+
 void process_arg(const char *arg){
     if(strcmp(arg, "--help") == 0){
         printf("Usage: my_grep [OPTION]... PATTERNS [FILE]\n");
@@ -39,6 +42,9 @@ void process_arg(const char *arg){
 }
 
 void grepping(){
+    if(pattern == NULL)
+        undefined_arg();
+
     FILE* fp = NULL;
     if(!list_root){
         fp = stdin;
@@ -86,6 +92,39 @@ static void freelist(struct filenode* root){
 static void seek_pattern(FILE* fp){
     char buf[BUFSIZ];
     while(fgets(buf, sizeof(buf), fp)){
-        printf("%s", buf);
+        int idx;
+        if((idx = find_substr(buf, pattern)) != -1)
+            printf("%s", buf);
+        printf("%d\n", idx);
     }
+}
+
+static int find_substr(const char* str, const char* sub){
+    const int slen = strlen(str);
+    const int plen = strlen(sub);
+    
+    if(plen == 0)
+        return 1;
+
+    int* offset = create_offset_table(sub);
+    for(int t = 0; t + plen <= slen;){
+        int p = plen-1;
+
+        while(p >= 0 && str[t+p] == sub[p])
+            p--;
+
+        if(p == -1)
+            return t;
+
+        t += plen - offset[(unsigned char)str[t+p]];
+    }
+    return 0;
+}
+
+static int* create_offset_table(const char* s){
+    static int buf[256];
+    memset(buf,-1,sizeof(buf));
+    for(int i = 0; s[i] != '\0'; i++)
+        buf[(unsigned char)s[i]] = i + 1;
+    return buf;
 }

@@ -3,7 +3,7 @@
 
 int main(int argc, char** argv){
     if(argc == 1){
-        eprintf("Usage: my_grep [OPTION]... PATTERNS [FILE]\nTry my_grep --help for more information\n");
+        undefined_arg();
     }
     for(int i = 1; i < argc; i++){
         process_arg(argv[i]);
