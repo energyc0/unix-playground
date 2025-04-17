@@ -1,10 +1,14 @@
 #include "my_grep.h"
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
+#define IGNORE_REGISTER 1
+
 static char* pattern = NULL;
+static int flags = 0;
 
 struct filenode{
     char* filename;
@@ -19,14 +23,19 @@ static void freenode(struct filenode* node);
 static void freelist(struct filenode* root);
 
 static void seek_pattern(FILE* fp);
+//allocates new string according to flags, must call free()
+static char* makestr_flag(const char* s);
 
 static int find_substr(const char* str, const char* sub);
 static int* create_offset_table(const char* s);
+
 
 void process_arg(const char *arg){
     if(strcmp(arg, "--help") == 0){
         printf("Usage: my_grep [OPTION]... PATTERNS [FILE]\n");
         exit(EXIT_SUCCESS);
+    }else if(strcmp(arg, "-i") == 0){
+        flags |= IGNORE_REGISTER;
     }else if(arg[0] == '-'){
         eprintf("Undefined argument \"%s\"\n", arg);
     }else if(pattern == NULL){
@@ -91,9 +100,11 @@ static void freelist(struct filenode* root){
 
 static void seek_pattern(FILE* fp){
     char buf[BUFSIZ];
+    char* fl_pattern = makestr_flag(pattern);
     while(fgets(buf, sizeof(buf), fp)){
         int idx;
-        if((idx = find_substr(buf, pattern)) != -1)
+        char* s = makestr_flag(buf);
+        if((idx = find_substr(s,fl_pattern)) != -1)
             printf("%s", buf);
         printf("%d\n", idx);
     }
@@ -118,7 +129,7 @@ static int find_substr(const char* str, const char* sub){
 
         t += plen - offset[(unsigned char)str[t+p]];
     }
-    return 0;
+    return -1;
 }
 
 static int* create_offset_table(const char* s){
@@ -127,4 +138,13 @@ static int* create_offset_table(const char* s){
     for(int i = 0; s[i] != '\0'; i++)
         buf[(unsigned char)s[i]] = i + 1;
     return buf;
+}
+
+static char* makestr_flag(const char* s){
+    char* res = strdup(s);
+    if(flags & IGNORE_REGISTER){
+        for(char* p = res; *p != '\0'; p++)
+            *p = tolower(*p);
+    }
+    return res;
 }
