@@ -1,26 +1,18 @@
 #include "my_grep.h"
+#include "filelist.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 
-#define IGNORE_REGISTER 1
+enum{
+    FIGNORE_REGISTER = 1,
+    FSEEK_WORD = 2
+};
 
 static char* pattern = NULL;
 static int flags = 0;
-
-struct filenode{
-    char* filename;
-    struct filenode* next;
-};
-
-static struct filenode* list_root = NULL;
-static struct filenode* list_end = NULL;
-
-static struct filenode* makenode(const char* fname);
-static void freenode(struct filenode* node);
-static void freelist(struct filenode* root);
 
 static void seek_pattern(FILE* fp);
 //allocates new string according to flags, must call free()
@@ -28,25 +20,22 @@ static char* makestr_flag(const char* s);
 
 static int find_substr(const char* str, const char* sub);
 static int* create_offset_table(const char* s);
-
+static void parse_flag(const char* flag);
 
 void process_arg(const char *arg){
-    if(strcmp(arg, "--help") == 0){
+    //output help info
+    if(strcmp(arg, "-h") == 0|| strcmp(arg, "--help") == 0 || strcmp(arg, "-help") == 0){
         printf("Usage: my_grep [OPTION]... PATTERNS [FILE]\n");
         exit(EXIT_SUCCESS);
-    }else if(strcmp(arg, "-i") == 0){
-        flags |= IGNORE_REGISTER;
+    //parse flag
     }else if(arg[0] == '-'){
-        eprintf("Undefined argument \"%s\"\n", arg);
+        parse_flag(arg);
+    //add pattern
     }else if(pattern == NULL){
         pattern = strdup(arg);
+    //add filename to the list
     }else{
-        if(list_root){
-            list_end->next = makenode(arg);
-            list_end = list_end->next;
-        }
-        else
-            list_root = list_end = makenode(arg);
+        flist_add(arg);
     }
 }
 
@@ -55,46 +44,19 @@ void grepping(){
         undefined_arg();
 
     FILE* fp = NULL;
-    if(!list_root){
+    if(flist_is_empty()){
         fp = stdin;
         seek_pattern(fp);
     }else{
-        struct filenode* p = list_root;
-        for(;p != NULL; p = p->next){
-            if((fp = fopen(p->filename, "r")) == NULL){
-                fprintf(stderr, "\"%s\" - failed to open: %s\n", p->filename, strerror(errno));
+        for(char* fname = flist_get();fname != NULL; fname = flist_get()){
+            if((fp = fopen(fname, "r")) == NULL){
+                fprintf(stderr, "\"%s\" - failed to open: %s\n", fname, strerror(errno));
                 continue;
             }
             seek_pattern(fp);
             fclose(fp);
         }
-        freelist(list_root);
-    }
-}
-
-static struct filenode* makenode(const char* fname){
-    struct filenode* p = malloc(sizeof(struct filenode));
-    if(p == NULL){
-        eprintf("malloc: %s\n", strerror(errno));
-    }
-    p->filename = strdup(fname);
-    p->next = NULL;
-    return p;
-}
-
-static void freenode(struct filenode* node){
-    if(node){
-        free(node->filename);
-        free(node);
-    }
-}
-
-static void freelist(struct filenode* root){
-    struct filenode* p = root;
-    while(root){
-        p = p->next;
-        freenode(root);
-        root = p;
+        flist_free();
     }
 }
 
@@ -106,7 +68,6 @@ static void seek_pattern(FILE* fp){
         char* s = makestr_flag(buf);
         if((idx = find_substr(s,fl_pattern)) != -1)
             printf("%s", buf);
-        printf("%d\n", idx);
     }
 }
 
@@ -142,9 +103,17 @@ static int* create_offset_table(const char* s){
 
 static char* makestr_flag(const char* s){
     char* res = strdup(s);
-    if(flags & IGNORE_REGISTER){
+    if(flags & FIGNORE_REGISTER){
         for(char* p = res; *p != '\0'; p++)
             *p = tolower(*p);
     }
     return res;
+}
+
+static void parse_flag(const char* flag){
+    if(strcmp(flag, "-i") == 0){
+        flags |= FIGNORE_REGISTER;
+    }else{
+        eprintf("Undefined argument \"%s\"\n", flag);
+    }
 }

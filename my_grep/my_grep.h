@@ -1,3 +1,6 @@
+#ifndef MY_GREP_H
+#define MY_GREP_H
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -10,3 +13,5 @@
 
 void process_arg(const char* arg);
 void grepping();
+
+#endif
