@@ -57,13 +57,13 @@ int flist_is_empty(){
 }
 
 char* flist_get(){
+    static int is_init = 0;
     static struct filenode* p = NULL;
-    if(p == NULL){
-        if(filelist.root == NULL)
-            return NULL;
+    if(!is_init){
         p = filelist.root;
+        is_init = 1;
     }
-    if(p->next == NULL)
+    if(p == NULL)
         return NULL;
 
     struct filenode* res = p;

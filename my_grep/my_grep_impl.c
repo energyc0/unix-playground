@@ -8,7 +8,8 @@
 
 enum{
     FIGNORE_REGISTER = 1,
-    FSEEK_WORD = 2
+    FSEEK_WORD = 2,
+    FLINE_NUM = 4,
 };
 
 static char* pattern = NULL;
@@ -63,15 +64,32 @@ void grepping(){
 static void seek_pattern(FILE* fp){
     char buf[BUFSIZ];
     char* fl_pattern = makestr_flag(pattern);
+    int line_number = 0;
     while(fgets(buf, sizeof(buf), fp)){
-        int idx;
         char* s = makestr_flag(buf);
-        if((idx = find_substr(s,fl_pattern)) != -1)
+        if(buf[strlen(buf)-1] == '\n')
+            ++line_number;
+        int idx;
+        if((idx = find_substr(s,fl_pattern)) != -1){
+            if(flags & FLINE_NUM)
+                printf("\x1b[38;5;48m%d\x1b[38;5;38m:\x1b[0m", line_number);
             printf("%s", buf);
+        }
     }
 }
 
 static int find_substr(const char* str, const char* sub){
+    if(flags & FSEEK_WORD){
+        char buf[BUFSIZ];
+        int offset = 0;
+        int len = strlen(str);
+        while(offset < len){
+            sscanf(str + offset,"%s", buf);
+            if(strcmp(sub, buf) == 0)
+                return offset;
+        }
+        return -1;
+    }
     const int slen = strlen(str);
     const int plen = strlen(sub);
     
@@ -113,6 +131,10 @@ static char* makestr_flag(const char* s){
 static void parse_flag(const char* flag){
     if(strcmp(flag, "-i") == 0){
         flags |= FIGNORE_REGISTER;
+    }else if(strcmp(flag, "-w") == 0){
+        flags |= FSEEK_WORD;
+    }else if(strcmp(flag, "-n") == 0){
+        flags |= FLINE_NUM;
     }else{
         eprintf("Undefined argument \"%s\"\n", flag);
     }
