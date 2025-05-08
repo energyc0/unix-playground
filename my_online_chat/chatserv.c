@@ -75,7 +75,6 @@ static void client_service(struct service_create* create_info){
     }
     
     printf("%s entered the chat\n",name);
-    dprintf(clientfd, "Hello, %s, you`ve entered the chat!", name); //read 2
 
     char buf[BUFSIZ];
     int len;
@@ -103,16 +102,18 @@ return 0;
 
 static int get_user_name(int clientfd, char* name, int namesz){
     while(1){
-        dprintf(clientfd, "Enter your name: "); // read 1
         namesz = read(clientfd, name, sizeof(name)-1); //write 1
         if(namesz < 0){
             return -1;
         }
         name[namesz-1] = '\0';
         if(is_name_busy(name)){
-            dprintf(clientfd, "This name is already in use\n");
+            if(write(clientfd, "F", 1) <0)
+                return -1;
             continue;
         }
+        if(write(clientfd, "S", 1) < 0)
+            return -1;
         break;
     }
     return namesz;
