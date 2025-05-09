@@ -49,15 +49,14 @@ int main(int argc, char** argv){
 
     printf("You`ve entered the chat!\n");
     char buf[BUFSIZ];
-    int len;
     while(fgets(buf, sizeof(buf), stdin) != NULL){
-        /*
-        //prompt a message
-        printf("%s: ", name);
-        fflush(stdin);
-        */
         buf[strlen(buf) - 1] = '\0';
-        dprintf(sockfd, "%s", buf);
+        if(strcmp("quit", buf) == 0 || strcmp("exit", buf) == 0){
+            printf("You`ve left the chat\n");
+            break;
+        }
+        if(dprintf(sockfd, "%s", buf) <= 0)
+            break;
     }
 
     return 0;
@@ -73,10 +72,12 @@ static void enter_username(int sockfd, char* buf, int bufsize){
             exit(EXIT_SUCCESS);
         buf[strlen(buf)-1] = '\0';
 
-        dprintf(sockfd, "%s", buf);
+        if(dprintf(sockfd, "%s", buf) <= 0)
+            FATAL("dprintf()");
 
         if((len = read(sockfd, buf, bufsize)) <= 0)
             FATAL("read()");
+
         buf[len] = '\0';
         buf[strcspn(buf, "\r\n")] = '\0';
         if(strcmp(buf, REQ_SUCCESS) == 0)
@@ -92,11 +93,16 @@ static void new_msg_thread(struct new_msg_create* create_info){
 
     char buf[BUFSIZ];
     int len;
-    while((len = read(sockfd, buf, sizeof(buf))) > 0){
+    while(1){
+        if((len = read(sockfd, buf, sizeof(buf))) <= 0)
+            break;
         if(write(STDOUT_FILENO, buf, len) <= 0)
-            FATAL("write()");
+            break;
     }
-    if(len < 0)
+
+
+    if(len <= 0){
         printf("Server closed connection...\n");
+    }
 
 }

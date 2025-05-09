@@ -1,3 +1,4 @@
+#include "clientlist.h"
 #include "utils.h"
 #include <bits/pthreadtypes.h>
 #include <errno.h>
@@ -14,16 +15,11 @@ struct service_create{
     pthread_barrier_t barrier;
 };
 
-pthread_mutex_t clients_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int clientfds[CHATSERVER_LISTENERS];
-static char* clientnames[CLIENTNAME_LEN];
-static int clientfds_size = 0;
-
 static void client_service(struct service_create* create_info);
-static int receive_message(int clientfd, char* buf, int buflen);
+//static int receive_message(int clientfd, char* buf, int buflen);
 static int get_user_name(int clientfd, char* name, int namesz);
 
-static int is_name_busy(char* name); //check whether the name is in use and add it to the list if it is not
+//static int is_name_busy(char* name); //check whether the name is in use and add it to the list if it is not
 
 int main(){
     int sockfd;
@@ -78,12 +74,12 @@ static void client_service(struct service_create* create_info){
 
     char buf[BUFSIZ];
     int len;
-    while((len = read(clientfd, buf, sizeof(buf))) > 0){ // write 2
-        buf[len-1] = '\0';
+    while((len = read(clientfd, buf, sizeof(buf)-1)) > 0){
+        buf[len] = '\0';
         if(buf[0] == '\0' || strcmp("exit", buf) == 0 || strcmp("quit", buf) == 0)
             break;
 
-        if(dprintf(clientfd, "%s: %s", name, buf) < 0){
+        if(dprintf(clientfd, "%s: %s\n", name, buf) < 0){
             fprintf(stderr, "failed to write to the client: %s\n", strerror(errno));
             break;
         }
@@ -93,12 +89,15 @@ static void client_service(struct service_create* create_info){
     }
 
     printf("%s exited the chat\n", name);
-    close(clientfd);
+    clientlist_erase(name); //close file descriptor and erase clientnode
+    clientlist_debug();
 }
 
+/*
 static int receive_message(int clientfd, char* buf, int buflen){
-return 0;
+    return 0;
 }
+*/
 
 static int get_user_name(int clientfd, char* name, int namesz){
     while(1){
@@ -106,33 +105,17 @@ static int get_user_name(int clientfd, char* name, int namesz){
         if(namesz < 0){
             return -1;
         }
-        name[namesz-1] = '\0';
-        if(is_name_busy(name)){
+        name[namesz] = '\0';
+        if(clientlist_is_busy(name)){
             if(write(clientfd, "F", 1) <0)
                 return -1;
             continue;
         }
         if(write(clientfd, "S", 1) < 0)
             return -1;
+        clientlist_add(name, clientfd);
+        clientlist_debug();
         break;
     }
     return namesz;
-}
-
-static int is_name_busy(char* name){
-    pthread_mutex_lock(&clients_mutex);
-
-    int ret = 0;
-    int i = 0;
-    for(; i < clientfds_size; i++){
-        if(strcmp(name, clientnames[i]) == 0){
-            ret = 1;
-            break;
-        }
-    }
-    if(ret == 0)
-        clientnames[clientfds_size++] = name; 
-
-    pthread_mutex_unlock(&clients_mutex);
-    return ret;
 }

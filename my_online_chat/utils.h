@@ -18,9 +18,4 @@
 #define REQ_SUCCESS "S"
 #define REQ_FAILED "F"
 
-int esocket(int domain, int type, int protocol);
-int ebind();
-int econnect();
-int elisten();
-
 #endif
