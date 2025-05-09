@@ -6,5 +6,6 @@ void clientlist_erase(char* name); // erase client entry from the list
 int clientlist_is_busy(char* name); // check whether there is an entry of the client
 void clientlist_clear(); // clear the whole list
 void clientlist_debug(); //print all nodes
+void clientlist_printf_msg(const char* fmt, ...); //print message to every user
 
 #endif

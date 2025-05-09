@@ -1,6 +1,5 @@
 #include "clientlist.h"
 #include "utils.h"
-#include <bits/pthreadtypes.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
@@ -69,26 +68,23 @@ static void client_service(struct service_create* create_info){
         fprintf(stderr, "failed to get a user name\n");
         return;
     }
-    
-    printf("%s entered the chat\n",name);
 
     char buf[BUFSIZ];
-    int len;
+    int len;    
+    clientlist_printf_msg("\x1b[1;32m%s\x1b[0m entered the chat\n",name);
+
     while((len = read(clientfd, buf, sizeof(buf)-1)) > 0){
         buf[len] = '\0';
         if(buf[0] == '\0' || strcmp("exit", buf) == 0 || strcmp("quit", buf) == 0)
             break;
 
-        if(dprintf(clientfd, "%s: %s\n", name, buf) < 0){
-            fprintf(stderr, "failed to write to the client: %s\n", strerror(errno));
-            break;
-        }
+        clientlist_printf_msg("\x1b[1;32m%s\x1b[0m: %s\n", name, buf);
     }
     if(len < 0){
         fprintf(stderr, "failed to write to the client: %s\n", strerror(errno));
     }
 
-    printf("%s exited the chat\n", name);
+    clientlist_printf_msg("\x1b[1;32m%s\x1b[0m exited the chat\n", name);
     clientlist_erase(name); //close file descriptor and erase clientnode
     clientlist_debug();
 }

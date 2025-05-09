@@ -1,11 +1,12 @@
 #include "clientlist.h"
 #include "utils.h"
+#include <errno.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-
+#include <stdarg.h>
 typedef struct clientnode{
     char* name;
     int clientfd;
@@ -123,10 +124,27 @@ void clientlist_clear(){
 }
 
 void clientlist_debug(){
+    pthread_mutex_lock(&clients_mutex);
     clientnode* ptr = root;
     while(ptr){
         printf("%s->", ptr->name);
         ptr = ptr->next;
     }
     printf("NULL\n");
+    pthread_mutex_unlock(&clients_mutex);
+}
+
+void clientlist_printf_msg(const char* fmt, ...){
+    pthread_mutex_lock(&clients_mutex);
+    clientnode* ptr = root;
+    while(ptr){
+        va_list vp;
+        va_start(vp, fmt);
+        
+        if(vdprintf(ptr->clientfd, fmt, vp) < 0)
+            fprintf(stderr, "failed to write to the client: %s\n", strerror(errno));
+        ptr = ptr->next;
+        va_end(vp);
+    }
+    pthread_mutex_unlock(&clients_mutex);
 }
