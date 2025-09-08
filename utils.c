@@ -45,6 +45,7 @@ void fatal(const char* fmt, ...){
     va_list ap;
     va_start(ap, fmt);
     vfprintf(stderr,fmt, ap);
+    putc('\n', stderr);
     va_end(ap);
 
     exit(EXIT_FAILURE);

@@ -40,7 +40,7 @@ void parse_args(vector_t* v, int argc, char** argv){
                 push_file(v, optarg, 1);
                 break;
             default:
-                fatal("Incorrect usage\n");
+                fatal("Incorrect usage");
         }
     }
     for(int idx = optind; argv[idx] != NULL; idx++)
