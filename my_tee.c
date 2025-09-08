@@ -3,22 +3,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-
-#define VBASE_CAPACITY (2)
-
-void fatal(const char*);
-
-typedef struct vector_t{
-    int* buf;
-    int capacity;
-    int size;
-} vector_t;
-
-void vinit(vector_t* v);
-void vpush_back(vector_t*v, int val);
-int vget(const vector_t* v, int idx);
-void vfree(vector_t* v);
-void vgrow(vector_t*v);
+#include "utils.h"
 
 void parse_args(vector_t* v, int argc, char** argv);
 void push_file(vector_t* v, const char* filename, int to_append);
@@ -40,13 +25,8 @@ int main(int argc, char** argv){
     return 0;
 }
 
-void fatal(const char*msg){
-    perror(msg);
-    exit(EXIT_FAILURE);
-}
-
 void parse_args(vector_t* v, int argc, char** argv){
-    int oldmask = umask(0644);
+    int oldmask = umask(0000);
     int opt;
     opterr = 0;
     vpush_back(v, STDOUT_FILENO);
@@ -68,37 +48,6 @@ void parse_args(vector_t* v, int argc, char** argv){
 
     umask(oldmask);
 
-}
-
-void vinit(vector_t* v){
-    v->buf = malloc(sizeof(v->buf[0])* VBASE_CAPACITY);
-    if(v->buf == NULL)
-        fatal("malloc()");
-    v->capacity = VBASE_CAPACITY;
-    v->size = 0;
-}
-
-void vpush_back(vector_t*v, int val){
-    if(v->size >= v->capacity)
-        vgrow(v);
-    v->buf[v->size++] = val;
-}
-
-int vget(const vector_t* v, int idx){
-    return v->buf[idx];
-}
-
-void vgrow(vector_t*v){
-    v->capacity >>=1;
-    typeof(v->buf) ptr = realloc(v->buf, v->capacity * sizeof(int));
-    if(ptr == NULL)
-        fatal("realloc()");
-}
-
-void vfree(vector_t* v){
-    free(v->buf);
-    v->buf = NULL;
-    v->capacity = v->size = 0;
 }
 
 void print_usage(FILE* fp, const char* progname){

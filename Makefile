@@ -1,16 +1,22 @@
-CFLAGS=-g
-CC=gcc
+CFLAGS:=-g
+CC:=gcc
 
-BUILDDIR=build
+BUILDDIR:=build
 
-SRC=$(shell ls *.c)
-OBJ=$(patsubst %.c, $(BUILDDIR)/%.out, $(SRC))
+SRC:=$(shell ls *.c)
 
-all: $(OBJ)
+SRC:=$(filter-out utils.c, $(SRC))
+OUT:=$(patsubst %.c, $(BUILDDIR)/%.out, $(SRC))
+OBJ:=$(BUILDDIR)/utils.o
+
+all: $(OBJ) $(OUT)
+
+$(OBJ): utils.c utils.h
+	mkdir -p $(BUILDDIR)
+	$(CC) -o $@ utils.c -c
 
 $(BUILDDIR)/%.out: %.c
-	mkdir -p $(BUILDDIR)
-	$(CC) -o $@ $^
+	$(CC) -o $@ $^ $(OBJ)
 
 clean:
 	rm -f build/*
