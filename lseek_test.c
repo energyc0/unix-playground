@@ -6,8 +6,6 @@
 #include <string.h>
 #include "utils.h"
 
-#define MSG "hello!\n"
-
 int main(int argc, char** argv) {
     if(argc < 4)
         fatal("Usage: %s [filename] [file hole size] [text]", argv[0]);
