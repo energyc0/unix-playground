@@ -1,8 +1,8 @@
-#include <stdio.h>
 #include "utils.h"
 #include <fcntl.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MSG_SIZE (16)
 
@@ -22,7 +22,7 @@ int main(void)
         perror_quit("lseek()");
 
     memset(buf, '1', sizeof(buf));
-    if(write(fd,buf,sizeof(buf)) == -1)
+    if (write(fd, buf, sizeof(buf)) == -1)
         perror_quit("write()");
 
     if (close(fd) == -1)

@@ -5,12 +5,12 @@ void readfile(FILE* fp);
 
 int main(int argc, char** argv)
 {
-    if(argc == 1) {
+    if (argc == 1) {
         readfile(stdin);
     } else {
-        for(int i = 1; i < argc; i++) {
+        for (int i = 1; i < argc; i++) {
             FILE* fp = fopen(argv[i], "r");
-            if(fp == NULL) {
+            if (fp == NULL) {
                 perror(argv[i]);
             } else {
                 readfile(fp);
@@ -24,6 +24,6 @@ int main(int argc, char** argv)
 void readfile(FILE* fp)
 {
     int c;
-    while((c = getc(fp)) != EOF)
+    while ((c = getc(fp)) != EOF)
         putchar(c);
 }

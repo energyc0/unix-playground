@@ -2,16 +2,16 @@
  * mkstemp() - generates temporary file
  */
 
-#include <stdio.h>
 #include "utils.h"
+#include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 #define DELAY 3
 
 void loud_sleep(void);
-void check_file(char *filename);
+void check_file(char* filename);
 
 int main(int argc, char** argv)
 {
@@ -22,21 +22,21 @@ int main(int argc, char** argv)
     printf("Created temporary file with name %s\n", tmpname);
     check_file(tmpname);
     loud_sleep();
-    
-/*
- * unlink()  deletes a name from the filesystem.  If that name was the last
- * link to a file and no processes have the file open, the file is  deleted
- * and the space it was using is made available for reuse.
- * 
- * If the name was the last link to a file but any processes still have the
- * file  open,  the  file  will remain in existence until the last file de‐
- * scriptor referring to it is closed.
- * 
- * If the name referred to a symbolic link, the link is removed.
- * 
- * If the name referred to a socket, FIFO, or device, the name  for  it  is
- * removed but processes which have the object open may continue to use it.
- */
+
+    /*
+     * unlink()  deletes a name from the filesystem.  If that name was the last
+     * link to a file and no processes have the file open, the file is  deleted
+     * and the space it was using is made available for reuse.
+     *
+     * If the name was the last link to a file but any processes still have the
+     * file  open,  the  file  will remain in existence until the last file de‐
+     * scriptor referring to it is closed.
+     *
+     * If the name referred to a symbolic link, the link is removed.
+     *
+     * If the name referred to a socket, FIFO, or device, the name  for  it  is
+     * removed but processes which have the object open may continue to use it.
+     */
     if (unlink(tmpname) == -1)
         perror_quit("unlink()");
     printf("Unlinked %s\n", tmpname);
@@ -56,12 +56,12 @@ void loud_sleep(void)
     sleep(DELAY);
 }
 
-void check_file(char *filename)
+void check_file(char* filename)
 {
     pid_t pid = fork();
     if (pid == 0) {
-        const char *cmd = "/bin/find";
-        char *args[] = {(char*)cmd, filename, NULL};
+        const char* cmd = "/bin/find";
+        char* args[] = { (char*)cmd, filename, NULL };
         execv(cmd, args);
         perror_quit("execv");
     } else if (pid == -1) {
