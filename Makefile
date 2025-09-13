@@ -19,6 +19,6 @@ $(BUILDDIR)/%.out: %.c
 	$(CC) -o $@ $^ $(OBJ)
 
 clean:
-	rm build/* file*
+	rm -f build/* file*
 
 .PHONY: clean
