@@ -15,10 +15,10 @@ all: $(OBJ) $(OUT)
 
 $(OBJ): $(SRCDIR)/utils.c $(SRCDIR)/utils.h
 	mkdir -p $(BUILDDIR)
-	$(CC) -o $@ $(SRCDIR)/utils.c -c
+	$(CC) -o $@ $(SRCDIR)/utils.c -c $(CFLAGS)
 
 $(BUILDDIR)/%.out: $(SRCDIR)/%.c
-	$(CC) -o $@ $^ $(OBJ)
+	$(CC) -o $@ $^ $(OBJ) $(CFLAGS)
 
 clean:
 	rm -f build/* file*
