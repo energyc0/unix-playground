@@ -7,20 +7,20 @@
  */
 
 #include "utils.h"
-#include <stdio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
 
 #define MSG_MYDUP "Hello from mydup branch\n"
 #define MSG_DUP "Hello from dup branch\n"
 
-int mydup(int oldfd) 
+int mydup(int oldfd)
 {
     int fd = fcntl(oldfd, F_DUPFD, 0);
     return fd;
-}   
+}
 
 int mydup2(int oldfd, int newfd)
 {
@@ -48,7 +48,7 @@ int mydup_branch()
         perror_quit("mydup()");
 
     if (write(STDOUT_FILENO, msg, strlen(msg)) == -1)
-        perror_quit("write()");    
+        perror_quit("write()");
     if (write(fd, msg, strlen(msg)) == -1)
         perror_quit("write()");
 
@@ -61,7 +61,7 @@ int mydup_branch()
 
     int dup2_arg = 10;
     fd = mydup2(dup2_arg, dup2_arg);
-    printf("mydup2(%d, %d) returned %d\n",dup2_arg,dup2_arg, fd);
+    printf("mydup2(%d, %d) returned %d\n", dup2_arg, dup2_arg, fd);
     if (fd == -1)
         perror("mydup2()");
     else
@@ -69,7 +69,7 @@ int mydup_branch()
 
     dup2_arg = 1;
     fd = dup2(dup2_arg, dup2_arg);
-    printf("mydup2(%d, %d) returned %d\n",dup2_arg,dup2_arg, fd);
+    printf("mydup2(%d, %d) returned %d\n", dup2_arg, dup2_arg, fd);
     if (fd == -1)
         perror("mydup2()");
 
@@ -82,7 +82,7 @@ int mydup_branch()
     printf("write(STDERR_FILENO)\n");
     if (write(STDERR_FILENO, msg, strlen(msg)) == -1)
         perror_quit("write()");
-    
+
     return 0;
 }
 
@@ -95,7 +95,7 @@ int dup_branch()
         perror_quit("dup()");
 
     if (write(STDOUT_FILENO, msg, strlen(msg)) == -1)
-        perror_quit("write()");    
+        perror_quit("write()");
     if (write(fd, msg, strlen(msg)) == -1)
         perror_quit("write()");
 
@@ -108,7 +108,7 @@ int dup_branch()
 
     int dup2_arg = 10;
     fd = dup2(dup2_arg, dup2_arg);
-    printf("dup2(%d, %d) returned %d\n",dup2_arg,dup2_arg, fd);
+    printf("dup2(%d, %d) returned %d\n", dup2_arg, dup2_arg, fd);
     if (fd == -1)
         perror("dup2()");
     else
@@ -116,7 +116,7 @@ int dup_branch()
 
     dup2_arg = 1;
     fd = dup2(dup2_arg, dup2_arg);
-    printf("dup2(%d, %d) returned %d\n",dup2_arg,dup2_arg, fd);
+    printf("dup2(%d, %d) returned %d\n", dup2_arg, dup2_arg, fd);
     if (fd == -1)
         perror("dup2()");
 
@@ -129,20 +129,20 @@ int dup_branch()
     printf("write(STDERR_FILENO)\n");
     if (write(STDERR_FILENO, msg, strlen(msg)) == -1)
         perror_quit("write()");
-    
+
     return 0;
 }
 
 int main(int argc, char** argv)
 {
-    if (argc != 2 
-        || (strcmp("-a", argv[1]) != 0 
-        && strcmp("-b", argv[1]) != 0))
+    if (argc != 2
+        || (strcmp("-a", argv[1]) != 0
+            && strcmp("-b", argv[1]) != 0))
         fatal("Usage: %s [-a or -b]\n"
-            "-a\tuse mydup*() functions\n"
-            "-b\tuse dup*() functions\n",
+              "-a\tuse mydup*() functions\n"
+              "-b\tuse dup*() functions\n",
             argv[0]);
-    
+
     if (strcmp("-a", argv[1]) == 0)
         return mydup_branch();
     else
