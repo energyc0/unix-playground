@@ -1,9 +1,9 @@
 #include "utils.h"
-#include <stdio.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 /* io list */
 struct iol {
@@ -81,7 +81,7 @@ struct iol* charlist_to_iol(char** argv)
 {
     struct iol* ptr = NULL;
     struct iol* root = NULL;
-    for(; *argv; argv++) {
+    for (; *argv; argv++) {
         if (root == NULL) {
             root = ptr = iol_alloc(*argv, strlen(*argv));
         } else {
@@ -112,16 +112,16 @@ int main(int argc, char** argv)
 {
     if (argc < 3)
         fatal("Usage: %s filename string1 [string2] ...\n"
-            "Create file with 'filename' and write strings there via one write() call\n",
+              "Create file with 'filename' and write strings there via one write() call\n",
             argv[0]);
-    
-    struct iol* list = charlist_to_iol(argv+2);
+
+    struct iol* list = charlist_to_iol(argv + 2);
     int fd = open(argv[1], O_RDWR | O_TRUNC | O_CREAT, 0664);
     if (fd == -1)
         perror_quit("open()");
 
     if (my_writev(fd, list) == -1)
-            perror_quit("my_writev()");
+        perror_quit("my_writev()");
 
     struct iol* readlist = copy_iol_size(list);
     if (lseek(fd, 0, SEEK_SET) == -1)

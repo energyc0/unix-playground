@@ -1,7 +1,7 @@
 #include "utils.h"
+#include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 #define TESTFILE "file"
 
