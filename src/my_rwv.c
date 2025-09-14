@@ -1,111 +1,68 @@
 #include "utils.h"
+#include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
-/* io list */
-struct iol {
-    void* data;
-    size_t n;
-    struct iol* next;
-};
-
-void* safe_malloc(unsigned int n)
+ssize_t my_readv(int fd, struct iovec* iov, int iovcnt)
 {
-    void* ptr = malloc(n);
-    if (ptr == NULL) {
-        perror_quit("malloc()");
+    if (iovcnt <= 0) {
+        errno = EINVAL;
+        return -1;
     }
-    return ptr;
-}
-
-struct iol* iol_alloc(void* data, size_t n)
-{
-    struct iol* ptr = safe_malloc(sizeof(struct iol));
-    ptr->data = data;
-    ptr->n = n;
-    ptr->next = NULL;
-    return ptr;
-}
-
-void iol_free(struct iol* p)
-{
-    while (p) {
-        struct iol* temp = p->next;
-        free(p);
-        p = temp;
-    }
-}
-
-ssize_t my_readv(int fd, struct iol* data)
-{
     size_t sz = 0;
-    for (const struct iol* ptr = data; ptr; ptr = ptr->next)
-        sz += ptr->n;
+    for (int i = 0; i < iovcnt; i++)
+        sz += iov[i].iov_len;
 
-    char* buf = safe_malloc(sz);
-
+    char* buf = malloc(sz);
+    if (buf == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
     ssize_t ret = read(fd, buf, sz);
-    if (ret > 0) {
-        size_t offset = 0;
-        for (struct iol* ptr = data; ptr; ptr = ptr->next) {
-            memcpy(ptr->data, buf + offset, ptr->n);
-            offset += ptr->n;
-        }
+
+    size_t offset = 0;
+    int i = 0;
+    ssize_t temp = ret;
+    while (temp > 0) {
+        size_t to_read = temp > iov[i].iov_len ? iov[i].iov_len : temp;
+        memcpy(iov[i++].iov_base, buf + offset, to_read);
+        temp -= to_read;
+        offset += to_read;
     }
 
     free(buf);
     return ret;
 }
-ssize_t my_writev(int fd, const struct iol* data)
-{
-    size_t sz = 0;
-    for (const struct iol* ptr = data; ptr; ptr = ptr->next)
-        sz += ptr->n;
 
-    char* buf = safe_malloc(sz);
+ssize_t my_writev(int fd, struct iovec* iov, int iovcnt)
+{
+    if (iovcnt <= 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    size_t sz = 0;
+    for (int i = 0; i < iovcnt; i++)
+        sz += iov[i].iov_len;
+
+    char* buf = malloc(sz);
+    if (buf == NULL) {
+        errno = ENOMEM;
+        return -1;
+    }
+
     size_t offset = 0;
-    for (const struct iol* ptr = data; ptr; ptr = ptr->next) {
-        memcpy(buf + offset, ptr->data, ptr->n);
-        offset += ptr->n;
+    for (int i = 0; i < iovcnt; i++) {
+        memcpy(buf + offset, iov[i].iov_base, iov[i].iov_len);
+        offset += iov[i].iov_len;
     }
 
     ssize_t ret = write(fd, buf, sz);
     free(buf);
     return ret;
-}
-
-struct iol* charlist_to_iol(char** argv)
-{
-    struct iol* ptr = NULL;
-    struct iol* root = NULL;
-    for (; *argv; argv++) {
-        if (root == NULL) {
-            root = ptr = iol_alloc(*argv, strlen(*argv));
-        } else {
-            ptr->next = iol_alloc(*argv, strlen(*argv));
-            ptr = ptr->next;
-        }
-    }
-    return root;
-}
-
-struct iol* copy_iol_size(const struct iol* list)
-{
-    struct iol* root = NULL;
-    struct iol* root_ptr = NULL;
-    for (const struct iol* list_ptr = list; list_ptr; list_ptr = list_ptr->next) {
-        char* temp = safe_malloc(list_ptr->n);
-        if (root == NULL) {
-            root = root_ptr = iol_alloc(temp, list_ptr->n);
-        } else {
-            root_ptr->next = iol_alloc(temp, list_ptr->n);
-            root_ptr = root_ptr->next;
-        }
-    }
-    return root;
 }
 
 int main(int argc, char** argv)
@@ -115,25 +72,42 @@ int main(int argc, char** argv)
               "Create file with 'filename' and write strings there via one write() call\n",
             argv[0]);
 
-    struct iol* list = charlist_to_iol(argv + 2);
     int fd = open(argv[1], O_RDWR | O_TRUNC | O_CREAT, 0664);
     if (fd == -1)
         perror_quit("open()");
 
-    if (my_writev(fd, list) == -1)
-        perror_quit("my_writev()");
+    const int iovcnt = argc - 2;
+    struct iovec bufs[iovcnt];
 
-    struct iol* readlist = copy_iol_size(list);
+    for (int i = 0; i < iovcnt; i++) {
+        bufs[i].iov_base = argv[i + 2];
+        bufs[i].iov_len = strlen(argv[i + 2]);
+    }
+    my_writev(fd, bufs, iovcnt);
+
+    for (int i = 0; i < iovcnt; i++) {
+        bufs[i].iov_base = malloc(bufs[i].iov_len);
+        if (bufs[i].iov_base == NULL)
+            perror_quit("malloc()");
+    }
     if (lseek(fd, 0, SEEK_SET) == -1)
         perror_quit("lseek()");
 
-    my_readv(fd, readlist);
-    for (struct iol* ptr = readlist; ptr; ptr = ptr->next) {
-        printf("%.*s\n", (int)ptr->n, (char*)ptr->data);
-        free(ptr->data);
+    printf("my_readv() debug:\n");
+    my_readv(fd, bufs, iovcnt);
+    for (int i = 0; i < iovcnt; i++) {
+        printf("%.*s ", (int)bufs[i].iov_len, (char*)bufs[i].iov_base);
+        free(bufs[i].iov_base);
     }
+    putchar('\n');
 
+    if (my_writev(111, bufs, iovcnt) == -1)
+        perror("my_writev()");
+    if (my_readv(111, bufs, iovcnt) == -1)
+        perror("my_readv()");
+    if (my_writev(1, bufs, -1) == -1)
+        perror("my_writev()");
+    if (my_readv(1, bufs, -1) == -1)
+        perror("my_readv()");
     close(fd);
-    iol_free(readlist);
-    iol_free(list);
 }
