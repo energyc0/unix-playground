@@ -71,5 +71,11 @@ int main(void)
     printf("fd_flg_cmp(fd1, fd3) = %d\n", (flg_res = fd_flg_cmp(fd1,fd3)));
     printf("fd_flg_cmp(fd4, fd3) = %d\n", (flg_res = fd_flg_cmp(fd4,fd3)));
 
+
+    close(fd1);
+    close(fd2);
+    close(fd3);
+    close(fd4);
+    close(fd5);
     return 0;
 }
