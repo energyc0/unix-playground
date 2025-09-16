@@ -1,5 +1,5 @@
-#include <stdio.h>
 #include <setjmp.h>
+#include <stdio.h>
 
 static jmp_buf env;
 
@@ -21,7 +21,7 @@ void f3(int val)
     f2(val - 1);
 }
 
-void foo(int val) 
+void foo(int val)
 {
     if (setjmp(env) == 0) {
         printf("foo(%d) setjmp() == 0\n", val);
@@ -33,11 +33,18 @@ void foo(int val)
 int main(void)
 {
     switch (setjmp(env)) {
-        case 0: f3(3); break;
-        case 1: f2(3); break;
-        case 2: f1(3); break;
-        case 3: break;
-        default: 
+    case 0:
+        f3(3);
+        break;
+    case 1:
+        f2(3);
+        break;
+    case 2:
+        f1(3);
+        break;
+    case 3:
+        break;
+    default:
         fprintf(stderr, "Undefined value\n");
         return 1;
     }

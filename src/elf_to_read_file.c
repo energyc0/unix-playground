@@ -28,14 +28,14 @@ static void doCalc(int val)
         printf("The cube of %d is %d\n", val, t);
     }
 }
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 /* Размещается в фрейме для main() */
 {
     static int key = 9973;
     /* Сегмент инициализированных данных */
     static char mbuf[10240000];
     /* Сегмент неинициализированных данных */
-    char *p;
+    char* p;
     /* Размещается в фрейме для main() */
     p = malloc(1024);
     /* Указывает на память в сегменте кучи */
